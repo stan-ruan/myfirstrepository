@@ -1,0 +1,66 @@
+﻿public with sharing class AccountCopyUpdatesToOriginHandler implements Triggers.Handler {
+
+    public static Set<String> excludedFieldNameSet = new Set<String>{
+        'id', 'ownerid', 'createddate', 'createdbyid', 'lastmodifieddate', 'lastmodifiedbyid', 'systemmodstamp', 'isdeleted', 
+        'masterrecordid', 'photourl', 'lastactivitydate',
+        'billingaddress', 'shippingaddress',
+        'is_active__c', 'status__c', 'original_account__c'
+    }; // all lowercase
+
+    public void handle() {
+        if (Trigger.isAfter && Trigger.isUpdate) {
+            if (HyteraConstants.isLeadConvert) return;
+
+            Map<Id, Account> editedAccMap = getAccountMap(Trigger.newMap.keySet());
+            Set<Id> parentAccIdSet = new Set<Id>();
+            for (Account acc : (List<Account>)Trigger.new) {
+                Account accOld = (Account)Trigger.oldMap.get(acc.Id);
+                if (acc.Original_Account__c != null && accOld.Is_Active__c == false && acc.Is_Active__c == true) {
+                    parentAccIdSet.add(acc.Original_Account__c);
+                } else {
+                    editedAccMap.remove(acc.Id);
+                }           
+            }
+            // validation, needs copy or not
+            if (parentAccIdSet.size() == 0) {
+                return;
+            }
+
+            Map<Id, Account> originAccMap = getAccountMap(parentAccIdSet);
+            
+            for (Account acc : editedAccMap.values()) {
+                Account pAcc = originAccMap.get(acc.Original_Account__c);
+                Map<String, Schema.SObjectField> FieldMap = Account.getSObjectType().getDescribe().fields.getMap();//Schema.SObjectType.Account.fields.getMap();
+                List<String> fieldNames = new List<String>(FieldMap.keySet());
+                // 1. do copy
+                for (String fieldName : fieldNames) {
+                    if (excludedFieldNameSet.contains(fieldName) || !(FieldMap.get(fieldName).getDescribe().isUpdateable())) {
+                        continue;
+                    }
+
+                    pAcc.put(fieldName, acc.get(fieldName));
+                }
+                // 2. update Is_Active__c to false for edited versions
+                acc.Is_Active__c = false;
+            }
+
+            List<Account> accToUpdateList = new List<Account>();
+            accToUpdateList.addAll(editedAccMap.values());
+            accToUpdateList.addAll(originAccMap.values());
+
+            update accToUpdateList;
+
+        }
+    }
+
+    public static Map<Id, Account> getAccountMap(Set<Id> idSet){
+        DescribeSObjectResult describeResult = Account.getSObjectType().getDescribe();  
+        List<String> fieldNames = new List<String>(describeResult.fields.getMap().keySet());    
+        String query = ' SELECT ' 
+            + String.join(fieldNames, ',') 
+            + ' FROM Account '
+            + ' WHERE id In :idSet';    
+        Map<Id, Account> theMap = new Map<Id, Account>((List<Account>)Database.query(query));
+        return theMap;
+    }
+}
