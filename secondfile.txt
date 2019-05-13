@@ -1,0 +1,21 @@
+ Hi,i'm stan, a salesforce developer. i have two years working experience in salesforce so far. 
+ The projects i worked on include vanke,infiled and hytera. 
+ 
+ vanke is a real estate company,it's project focus on  customer service. 
+ 
+ infiled is an LED screen manufacturer, it's project focus on global sales management and marketing. 
+ 
+ Hytera is a global private network communications company, it has a wide range of project, 
+include sales management,marketing,customer service and community management. 
+in the project, i was mainly responsible for system integration and product quotation.
+
+ i am very happy to join this team and look forward to working with this team members. that's all thank you.
+ 
+ 先通过Git拉去代码
+ git clone
+ 
+ 
+ mklink /J C:\Users\wni004\Project\Pepsico\force-app\main\src C:\Users\wni004\Pepsico\PMF_GTM_Sales_Transformation\sr C:\Users\lruan009\Desktop\Newfolder
+ 
+ 
+mklink /J C:\Users\lruan009\Desktop\Newfolder C:\git_code\PMF_GTM_Sales_Transformation\src
